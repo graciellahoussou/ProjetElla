@@ -1,46 +1,68 @@
 {
-  "name": "esbuild",
-  "version": "0.21.5",
-  "description": "An extremely fast JavaScript and CSS bundler and minifier.",
+  "author": "Felix Geisendörfer <felix@debuggable.com> (http://debuggable.com/)",
+  "name": "form-data",
+  "description": "A library to create readable \"multipart/form-data\" streams. Can be used to submit forms and file uploads to other web applications.",
+  "version": "4.0.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/evanw/esbuild.git"
+    "url": "git://github.com/form-data/form-data.git"
   },
+  "main": "./lib/form_data",
+  "browser": "./lib/browser",
+  "typings": "./index.d.ts",
   "scripts": {
-    "postinstall": "node install.js"
+    "pretest": "rimraf coverage test/tmp",
+    "test": "istanbul cover test/run.js",
+    "posttest": "istanbul report lcov text",
+    "lint": "eslint lib/*.js test/*.js test/integration/*.js",
+    "report": "istanbul report lcov text",
+    "ci-lint": "is-node-modern 8 && npm run lint || is-node-not-modern 8",
+    "ci-test": "npm run test && npm run browser && npm run report",
+    "predebug": "rimraf coverage test/tmp",
+    "debug": "verbose=1 ./test/run.js",
+    "browser": "browserify -t browserify-istanbul test/run-browser.js | obake --coverage",
+    "check": "istanbul check-coverage coverage/coverage*.json",
+    "files": "pkgfiles --sort=name",
+    "get-version": "node -e \"console.log(require('./package.json').version)\"",
+    "update-readme": "sed -i.bak 's/\\/master\\.svg/\\/v'$(npm --silent run get-version)'.svg/g' README.md",
+    "restore-readme": "mv README.md.bak README.md",
+    "prepublish": "in-publish && npm run update-readme || not-in-publish",
+    "postpublish": "npm run restore-readme"
   },
-  "main": "lib/main.js",
-  "types": "lib/main.d.ts",
+  "pre-commit": [
+    "lint",
+    "ci-test",
+    "check"
+  ],
   "engines": {
-    "node": ">=12"
+    "node": ">= 6"
   },
-  "bin": {
-    "esbuild": "bin/esbuild"
+  "dependencies": {
+    "asynckit": "^0.4.0",
+    "combined-stream": "^1.0.8",
+    "mime-types": "^2.1.12"
   },
-  "optionalDependencies": {
-    "@esbuild/aix-ppc64": "0.21.5",
-    "@esbuild/android-arm": "0.21.5",
-    "@esbuild/android-arm64": "0.21.5",
-    "@esbuild/android-x64": "0.21.5",
-    "@esbuild/darwin-arm64": "0.21.5",
-    "@esbuild/darwin-x64": "0.21.5",
-    "@esbuild/freebsd-arm64": "0.21.5",
-    "@esbuild/freebsd-x64": "0.21.5",
-    "@esbuild/linux-arm": "0.21.5",
-    "@esbuild/linux-arm64": "0.21.5",
-    "@esbuild/linux-ia32": "0.21.5",
-    "@esbuild/linux-loong64": "0.21.5",
-    "@esbuild/linux-mips64el": "0.21.5",
-    "@esbuild/linux-ppc64": "0.21.5",
-    "@esbuild/linux-riscv64": "0.21.5",
-    "@esbuild/linux-s390x": "0.21.5",
-    "@esbuild/linux-x64": "0.21.5",
-    "@esbuild/netbsd-x64": "0.21.5",
-    "@esbuild/openbsd-x64": "0.21.5",
-    "@esbuild/sunos-x64": "0.21.5",
-    "@esbuild/win32-arm64": "0.21.5",
-    "@esbuild/win32-ia32": "0.21.5",
-    "@esbuild/win32-x64": "0.21.5"
+  "devDependencies": {
+    "@types/node": "^12.0.10",
+    "browserify": "^13.1.1",
+    "browserify-istanbul": "^2.0.0",
+    "coveralls": "^3.0.4",
+    "cross-spawn": "^6.0.5",
+    "eslint": "^6.0.1",
+    "fake": "^0.2.2",
+    "far": "^0.0.7",
+    "formidable": "^1.0.17",
+    "in-publish": "^2.0.0",
+    "is-node-modern": "^1.0.0",
+    "istanbul": "^0.4.5",
+    "obake": "^0.1.2",
+    "puppeteer": "^1.19.0",
+    "pkgfiles": "^2.3.0",
+    "pre-commit": "^1.1.3",
+    "request": "^2.88.0",
+    "rimraf": "^2.7.1",
+    "tape": "^4.6.2",
+    "typescript": "^3.5.2"
   },
   "license": "MIT"
 }
