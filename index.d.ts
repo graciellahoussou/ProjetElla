@@ -1,683 +1,192 @@
-// This definition file follows a somewhat unusual format. ESTree allows
-// runtime type checks based on the `type` parameter. In order to explain this
-// to typescript we want to use discriminated union types:
-// https://github.com/Microsoft/TypeScript/pull/9163
-//
-// For ESTree this is a bit tricky because the high level interfaces like
-// Node or Function are pulling double duty. We want to pass common fields down
-// to the interfaces that extend them (like Identifier or
-// ArrowFunctionExpression), but you can't extend a type union or enforce
-// common fields on them. So we've split the high level interfaces into two
-// types, a base type which passes down inherited fields, and a type union of
-// all types which extend the base type. Only the type union is exported, and
-// the union is how other types refer to the collection of inheriting types.
-//
-// This makes the definitions file here somewhat more difficult to maintain,
-// but it has the notable advantage of making ESTree much easier to use as
-// an end user.
-
-export interface BaseNodeWithoutComments {
-    // Every leaf interface that extends BaseNode must specify a type property.
-    // The type property should be a string literal. For example, Identifier
-    // has: `type: "Identifier"`
-    type: string;
-    loc?: SourceLocation | null | undefined;
-    range?: [number, number] | undefined;
-}
-
-export interface BaseNode extends BaseNodeWithoutComments {
-    leadingComments?: Comment[] | undefined;
-    trailingComments?: Comment[] | undefined;
-}
-
-export interface NodeMap {
-    AssignmentProperty: AssignmentProperty;
-    CatchClause: CatchClause;
-    Class: Class;
-    ClassBody: ClassBody;
-    Expression: Expression;
-    Function: Function;
-    Identifier: Identifier;
-    Literal: Literal;
-    MethodDefinition: MethodDefinition;
-    ModuleDeclaration: ModuleDeclaration;
-    ModuleSpecifier: ModuleSpecifier;
-    Pattern: Pattern;
-    PrivateIdentifier: PrivateIdentifier;
-    Program: Program;
-    Property: Property;
-    PropertyDefinition: PropertyDefinition;
-    SpreadElement: SpreadElement;
-    Statement: Statement;
-    Super: Super;
-    SwitchCase: SwitchCase;
-    TemplateElement: TemplateElement;
-    VariableDeclarator: VariableDeclarator;
-}
-
-export type Node = NodeMap[keyof NodeMap];
-
-export interface Comment extends BaseNodeWithoutComments {
-    type: "Line" | "Block";
-    value: string;
-}
-
-export interface SourceLocation {
-    source?: string | null | undefined;
-    start: Position;
-    end: Position;
-}
-
-export interface Position {
-    /** >= 1 */
-    line: number;
-    /** >= 0 */
-    column: number;
-}
-
-export interface Program extends BaseNode {
-    type: "Program";
-    sourceType: "script" | "module";
-    body: Array<Directive | Statement | ModuleDeclaration>;
-    comments?: Comment[] | undefined;
-}
-
-export interface Directive extends BaseNode {
-    type: "ExpressionStatement";
-    expression: Literal;
-    directive: string;
-}
-
-export interface BaseFunction extends BaseNode {
-    params: Pattern[];
-    generator?: boolean | undefined;
-    async?: boolean | undefined;
-    // The body is either BlockStatement or Expression because arrow functions
-    // can have a body that's either. FunctionDeclarations and
-    // FunctionExpressions have only BlockStatement bodies.
-    body: BlockStatement | Expression;
-}
-
-export type Function = FunctionDeclaration | FunctionExpression | ArrowFunctionExpression;
-
-export type Statement =
-    | ExpressionStatement
-    | BlockStatement
-    | StaticBlock
-    | EmptyStatement
-    | DebuggerStatement
-    | WithStatement
-    | ReturnStatement
-    | LabeledStatement
-    | BreakStatement
-    | ContinueStatement
-    | IfStatement
-    | SwitchStatement
-    | ThrowStatement
-    | TryStatement
-    | WhileStatement
-    | DoWhileStatement
-    | ForStatement
-    | ForInStatement
-    | ForOfStatement
-    | Declaration;
-
-export interface BaseStatement extends BaseNode {}
-
-export interface EmptyStatement extends BaseStatement {
-    type: "EmptyStatement";
-}
-
-export interface BlockStatement extends BaseStatement {
-    type: "BlockStatement";
-    body: Statement[];
-    innerComments?: Comment[] | undefined;
-}
-
-export interface StaticBlock extends Omit<BlockStatement, "type"> {
-    type: "StaticBlock";
-}
-
-export interface ExpressionStatement extends BaseStatement {
-    type: "ExpressionStatement";
-    expression: Expression;
-}
-
-export interface IfStatement extends BaseStatement {
-    type: "IfStatement";
-    test: Expression;
-    consequent: Statement;
-    alternate?: Statement | null | undefined;
-}
-
-export interface LabeledStatement extends BaseStatement {
-    type: "LabeledStatement";
-    label: Identifier;
-    body: Statement;
-}
-
-export interface BreakStatement extends BaseStatement {
-    type: "BreakStatement";
-    label?: Identifier | null | undefined;
-}
-
-export interface ContinueStatement extends BaseStatement {
-    type: "ContinueStatement";
-    label?: Identifier | null | undefined;
-}
-
-export interface WithStatement extends BaseStatement {
-    type: "WithStatement";
-    object: Expression;
-    body: Statement;
-}
-
-export interface SwitchStatement extends BaseStatement {
-    type: "SwitchStatement";
-    discriminant: Expression;
-    cases: SwitchCase[];
-}
-
-export interface ReturnStatement extends BaseStatement {
-    type: "ReturnStatement";
-    argument?: Expression | null | undefined;
-}
-
-export interface ThrowStatement extends BaseStatement {
-    type: "ThrowStatement";
-    argument: Expression;
-}
-
-export interface TryStatement extends BaseStatement {
-    type: "TryStatement";
-    block: BlockStatement;
-    handler?: CatchClause | null | undefined;
-    finalizer?: BlockStatement | null | undefined;
-}
-
-export interface WhileStatement extends BaseStatement {
-    type: "WhileStatement";
-    test: Expression;
-    body: Statement;
-}
-
-export interface DoWhileStatement extends BaseStatement {
-    type: "DoWhileStatement";
-    body: Statement;
-    test: Expression;
-}
-
-export interface ForStatement extends BaseStatement {
-    type: "ForStatement";
-    init?: VariableDeclaration | Expression | null | undefined;
-    test?: Expression | null | undefined;
-    update?: Expression | null | undefined;
-    body: Statement;
-}
-
-export interface BaseForXStatement extends BaseStatement {
-    left: VariableDeclaration | Pattern;
-    right: Expression;
-    body: Statement;
-}
-
-export interface ForInStatement extends BaseForXStatement {
-    type: "ForInStatement";
-}
-
-export interface DebuggerStatement extends BaseStatement {
-    type: "DebuggerStatement";
-}
-
-export type Declaration = FunctionDeclaration | VariableDeclaration | ClassDeclaration;
-
-export interface BaseDeclaration extends BaseStatement {}
-
-export interface MaybeNamedFunctionDeclaration extends BaseFunction, BaseDeclaration {
-    type: "FunctionDeclaration";
-    /** It is null when a function declaration is a part of the `export default function` statement */
-    id: Identifier | null;
-    body: BlockStatement;
-}
-
-export interface FunctionDeclaration extends MaybeNamedFunctionDeclaration {
-    id: Identifier;
-}
-
-export interface VariableDeclaration extends BaseDeclaration {
-    type: "VariableDeclaration";
-    declarations: VariableDeclarator[];
-    kind: "var" | "let" | "const";
-}
-
-export interface VariableDeclarator extends BaseNode {
-    type: "VariableDeclarator";
-    id: Pattern;
-    init?: Expression | null | undefined;
-}
-
-export interface ExpressionMap {
-    ArrayExpression: ArrayExpression;
-    ArrowFunctionExpression: ArrowFunctionExpression;
-    AssignmentExpression: AssignmentExpression;
-    AwaitExpression: AwaitExpression;
-    BinaryExpression: BinaryExpression;
-    CallExpression: CallExpression;
-    ChainExpression: ChainExpression;
-    ClassExpression: ClassExpression;
-    ConditionalExpression: ConditionalExpression;
-    FunctionExpression: FunctionExpression;
-    Identifier: Identifier;
-    ImportExpression: ImportExpression;
-    Literal: Literal;
-    LogicalExpression: LogicalExpression;
-    MemberExpression: MemberExpression;
-    MetaProperty: MetaProperty;
-    NewExpression: NewExpression;
-    ObjectExpression: ObjectExpression;
-    SequenceExpression: SequenceExpression;
-    TaggedTemplateExpression: TaggedTemplateExpression;
-    TemplateLiteral: TemplateLiteral;
-    ThisExpression: ThisExpression;
-    UnaryExpression: UnaryExpression;
-    UpdateExpression: UpdateExpression;
-    YieldExpression: YieldExpression;
-}
-
-export type Expression = ExpressionMap[keyof ExpressionMap];
-
-export interface BaseExpression extends BaseNode {}
-
-export type ChainElement = SimpleCallExpression | MemberExpression;
-
-export interface ChainExpression extends BaseExpression {
-    type: "ChainExpression";
-    expression: ChainElement;
-}
-
-export interface ThisExpression extends BaseExpression {
-    type: "ThisExpression";
-}
-
-export interface ArrayExpression extends BaseExpression {
-    type: "ArrayExpression";
-    elements: Array<Expression | SpreadElement | null>;
-}
-
-export interface ObjectExpression extends BaseExpression {
-    type: "ObjectExpression";
-    properties: Array<Property | SpreadElement>;
-}
-
-export interface PrivateIdentifier extends BaseNode {
-    type: "PrivateIdentifier";
-    name: string;
-}
-
-export interface Property extends BaseNode {
-    type: "Property";
-    key: Expression | PrivateIdentifier;
-    value: Expression | Pattern; // Could be an AssignmentProperty
-    kind: "init" | "get" | "set";
-    method: boolean;
-    shorthand: boolean;
-    computed: boolean;
-}
-
-export interface PropertyDefinition extends BaseNode {
-    type: "PropertyDefinition";
-    key: Expression | PrivateIdentifier;
-    value?: Expression | null | undefined;
-    computed: boolean;
-    static: boolean;
-}
-
-export interface FunctionExpression extends BaseFunction, BaseExpression {
-    id?: Identifier | null | undefined;
-    type: "FunctionExpression";
-    body: BlockStatement;
-}
-
-export interface SequenceExpression extends BaseExpression {
-    type: "SequenceExpression";
-    expressions: Expression[];
-}
-
-export interface UnaryExpression extends BaseExpression {
-    type: "UnaryExpression";
-    operator: UnaryOperator;
-    prefix: true;
-    argument: Expression;
-}
-
-export interface BinaryExpression extends BaseExpression {
-    type: "BinaryExpression";
-    operator: BinaryOperator;
-    left: Expression;
-    right: Expression;
-}
-
-export interface AssignmentExpression extends BaseExpression {
-    type: "AssignmentExpression";
-    operator: AssignmentOperator;
-    left: Pattern | MemberExpression;
-    right: Expression;
-}
-
-export interface UpdateExpression extends BaseExpression {
-    type: "UpdateExpression";
-    operator: UpdateOperator;
-    argument: Expression;
-    prefix: boolean;
-}
-
-export interface LogicalExpression extends BaseExpression {
-    type: "LogicalExpression";
-    operator: LogicalOperator;
-    left: Expression;
-    right: Expression;
-}
-
-export interface ConditionalExpression extends BaseExpression {
-    type: "ConditionalExpression";
-    test: Expression;
-    alternate: Expression;
-    consequent: Expression;
-}
-
-export interface BaseCallExpression extends BaseExpression {
-    callee: Expression | Super;
-    arguments: Array<Expression | SpreadElement>;
-}
-export type CallExpression = SimpleCallExpression | NewExpression;
-
-export interface SimpleCallExpression extends BaseCallExpression {
-    type: "CallExpression";
-    optional: boolean;
-}
-
-export interface NewExpression extends BaseCallExpression {
-    type: "NewExpression";
-}
-
-export interface MemberExpression extends BaseExpression, BasePattern {
-    type: "MemberExpression";
-    object: Expression | Super;
-    property: Expression | PrivateIdentifier;
-    computed: boolean;
-    optional: boolean;
-}
-
-export type Pattern = Identifier | ObjectPattern | ArrayPattern | RestElement | AssignmentPattern | MemberExpression;
-
-export interface BasePattern extends BaseNode {}
-
-export interface SwitchCase extends BaseNode {
-    type: "SwitchCase";
-    test?: Expression | null | undefined;
-    consequent: Statement[];
-}
-
-export interface CatchClause extends BaseNode {
-    type: "CatchClause";
-    param: Pattern | null;
-    body: BlockStatement;
-}
-
-export interface Identifier extends BaseNode, BaseExpression, BasePattern {
-    type: "Identifier";
-    name: string;
-}
-
-export type Literal = SimpleLiteral | RegExpLiteral | BigIntLiteral;
-
-export interface SimpleLiteral extends BaseNode, BaseExpression {
-    type: "Literal";
-    value: string | boolean | number | null;
-    raw?: string | undefined;
-}
-
-export interface RegExpLiteral extends BaseNode, BaseExpression {
-    type: "Literal";
-    value?: RegExp | null | undefined;
-    regex: {
-        pattern: string;
-        flags: string;
-    };
-    raw?: string | undefined;
-}
-
-export interface BigIntLiteral extends BaseNode, BaseExpression {
-    type: "Literal";
-    value?: bigint | null | undefined;
-    bigint: string;
-    raw?: string | undefined;
-}
-
-export type UnaryOperator = "-" | "+" | "!" | "~" | "typeof" | "void" | "delete";
-
-export type BinaryOperator =
-    | "=="
-    | "!="
-    | "==="
-    | "!=="
-    | "<"
-    | "<="
-    | ">"
-    | ">="
-    | "<<"
-    | ">>"
-    | ">>>"
-    | "+"
-    | "-"
-    | "*"
-    | "/"
-    | "%"
-    | "**"
-    | "|"
-    | "^"
-    | "&"
-    | "in"
-    | "instanceof";
-
-export type LogicalOperator = "||" | "&&" | "??";
-
-export type AssignmentOperator =
-    | "="
-    | "+="
-    | "-="
-    | "*="
-    | "/="
-    | "%="
-    | "**="
-    | "<<="
-    | ">>="
-    | ">>>="
-    | "|="
-    | "^="
-    | "&="
-    | "||="
-    | "&&="
-    | "??=";
-
-export type UpdateOperator = "++" | "--";
-
-export interface ForOfStatement extends BaseForXStatement {
-    type: "ForOfStatement";
-    await: boolean;
-}
-
-export interface Super extends BaseNode {
-    type: "Super";
-}
-
-export interface SpreadElement extends BaseNode {
-    type: "SpreadElement";
-    argument: Expression;
-}
-
-export interface ArrowFunctionExpression extends BaseExpression, BaseFunction {
-    type: "ArrowFunctionExpression";
-    expression: boolean;
-    body: BlockStatement | Expression;
-}
-
-export interface YieldExpression extends BaseExpression {
-    type: "YieldExpression";
-    argument?: Expression | null | undefined;
-    delegate: boolean;
-}
-
-export interface TemplateLiteral extends BaseExpression {
-    type: "TemplateLiteral";
-    quasis: TemplateElement[];
-    expressions: Expression[];
-}
-
-export interface TaggedTemplateExpression extends BaseExpression {
-    type: "TaggedTemplateExpression";
-    tag: Expression;
-    quasi: TemplateLiteral;
-}
-
-export interface TemplateElement extends BaseNode {
-    type: "TemplateElement";
-    tail: boolean;
-    value: {
-        /** It is null when the template literal is tagged and the text has an invalid escape (e.g. - tag`\unicode and \u{55}`) */
-        cooked?: string | null | undefined;
-        raw: string;
-    };
-}
-
-export interface AssignmentProperty extends Property {
-    value: Pattern;
-    kind: "init";
-    method: boolean; // false
-}
-
-export interface ObjectPattern extends BasePattern {
-    type: "ObjectPattern";
-    properties: Array<AssignmentProperty | RestElement>;
-}
-
-export interface ArrayPattern extends BasePattern {
-    type: "ArrayPattern";
-    elements: Array<Pattern | null>;
-}
-
-export interface RestElement extends BasePattern {
-    type: "RestElement";
-    argument: Pattern;
-}
-
-export interface AssignmentPattern extends BasePattern {
-    type: "AssignmentPattern";
-    left: Pattern;
-    right: Expression;
-}
-
-export type Class = ClassDeclaration | ClassExpression;
-export interface BaseClass extends BaseNode {
-    superClass?: Expression | null | undefined;
-    body: ClassBody;
-}
-
-export interface ClassBody extends BaseNode {
-    type: "ClassBody";
-    body: Array<MethodDefinition | PropertyDefinition | StaticBlock>;
-}
-
-export interface MethodDefinition extends BaseNode {
-    type: "MethodDefinition";
-    key: Expression | PrivateIdentifier;
-    value: FunctionExpression;
-    kind: "constructor" | "method" | "get" | "set";
-    computed: boolean;
-    static: boolean;
-}
-
-export interface MaybeNamedClassDeclaration extends BaseClass, BaseDeclaration {
-    type: "ClassDeclaration";
-    /** It is null when a class declaration is a part of the `export default class` statement */
-    id: Identifier | null;
-}
-
-export interface ClassDeclaration extends MaybeNamedClassDeclaration {
-    id: Identifier;
-}
-
-export interface ClassExpression extends BaseClass, BaseExpression {
-    type: "ClassExpression";
-    id?: Identifier | null | undefined;
-}
-
-export interface MetaProperty extends BaseExpression {
-    type: "MetaProperty";
-    meta: Identifier;
-    property: Identifier;
-}
-
-export type ModuleDeclaration =
-    | ImportDeclaration
-    | ExportNamedDeclaration
-    | ExportDefaultDeclaration
-    | ExportAllDeclaration;
-export interface BaseModuleDeclaration extends BaseNode {}
-
-export type ModuleSpecifier = ImportSpecifier | ImportDefaultSpecifier | ImportNamespaceSpecifier | ExportSpecifier;
-export interface BaseModuleSpecifier extends BaseNode {
-    local: Identifier;
-}
-
-export interface ImportDeclaration extends BaseModuleDeclaration {
-    type: "ImportDeclaration";
-    specifiers: Array<ImportSpecifier | ImportDefaultSpecifier | ImportNamespaceSpecifier>;
-    source: Literal;
-}
-
-export interface ImportSpecifier extends BaseModuleSpecifier {
-    type: "ImportSpecifier";
-    imported: Identifier;
-}
-
-export interface ImportExpression extends BaseExpression {
-    type: "ImportExpression";
-    source: Expression;
-}
-
-export interface ImportDefaultSpecifier extends BaseModuleSpecifier {
-    type: "ImportDefaultSpecifier";
-}
-
-export interface ImportNamespaceSpecifier extends BaseModuleSpecifier {
-    type: "ImportNamespaceSpecifier";
-}
-
-export interface ExportNamedDeclaration extends BaseModuleDeclaration {
-    type: "ExportNamedDeclaration";
-    declaration?: Declaration | null | undefined;
-    specifiers: ExportSpecifier[];
-    source?: Literal | null | undefined;
-}
-
-export interface ExportSpecifier extends BaseModuleSpecifier {
-    type: "ExportSpecifier";
-    exported: Identifier;
-}
-
-export interface ExportDefaultDeclaration extends BaseModuleDeclaration {
-    type: "ExportDefaultDeclaration";
-    declaration: MaybeNamedFunctionDeclaration | MaybeNamedClassDeclaration | Expression;
-}
-
-export interface ExportAllDeclaration extends BaseModuleDeclaration {
-    type: "ExportAllDeclaration";
-    exported: Identifier | null;
-    source: Literal;
-}
-
-export interface AwaitExpression extends BaseExpression {
-    type: "AwaitExpression";
-    argument: Expression;
-}
+// TypeScript Version: 3.0
+
+/// <reference types="node" />
+
+import * as fs from "fs";
+import { EventEmitter } from "events";
+import { Matcher } from 'anymatch';
+
+export class FSWatcher extends EventEmitter implements fs.FSWatcher {
+  options: WatchOptions;
+
+  /**
+   * Constructs a new FSWatcher instance with optional WatchOptions parameter.
+   */
+  constructor(options?: WatchOptions);
+
+  /**
+   * Add files, directories, or glob patterns for tracking. Takes an array of strings or just one
+   * string.
+   */
+  add(paths: string | ReadonlyArray<string>): this;
+
+  /**
+   * Stop watching files, directories, or glob patterns. Takes an array of strings or just one
+   * string.
+   */
+  unwatch(paths: string | ReadonlyArray<string>): this;
+
+  /**
+   * Returns an object representing all the paths on the file system being watched by this
+   * `FSWatcher` instance. The object's keys are all the directories (using absolute paths unless
+   * the `cwd` option was used), and the values are arrays of the names of the items contained in
+   * each directory.
+   */
+  getWatched(): {
+    [directory: string]: string[];
+  };
+
+  /**
+   * Removes all listeners from watched files.
+   */
+  close(): Promise<void>;
+
+  on(event: 'add'|'addDir'|'change', listener: (path: string, stats?: fs.Stats) => void): this;
+
+  on(event: 'all', listener: (eventName: 'add'|'addDir'|'change'|'unlink'|'unlinkDir', path: string, stats?: fs.Stats) => void): this;
+
+  /**
+   * Error occurred
+   */
+  on(event: 'error', listener: (error: Error) => void): this;
+
+  /**
+   * Exposes the native Node `fs.FSWatcher events`
+   */
+  on(event: 'raw', listener: (eventName: string, path: string, details: any) => void): this;
+
+  /**
+   * Fires when the initial scan is complete
+   */
+  on(event: 'ready', listener: () => void): this;
+
+  on(event: 'unlink'|'unlinkDir', listener: (path: string) => void): this;
+
+  on(event: string, listener: (...args: any[]) => void): this;
+
+  ref(): this;
+  
+  unref(): this;
+}
+
+export interface WatchOptions {
+  /**
+   * Indicates whether the process should continue to run as long as files are being watched. If
+   * set to `false` when using `fsevents` to watch, no more events will be emitted after `ready`,
+   * even if the process continues to run.
+   */
+  persistent?: boolean;
+
+  /**
+   * ([anymatch](https://github.com/micromatch/anymatch)-compatible definition) Defines files/paths to
+   * be ignored. The whole relative or absolute path is tested, not just filename. If a function
+   * with two arguments is provided, it gets called twice per path - once with a single argument
+   * (the path), second time with two arguments (the path and the
+   * [`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats) object of that path).
+   */
+  ignored?: Matcher;
+
+  /**
+   * If set to `false` then `add`/`addDir` events are also emitted for matching paths while
+   * instantiating the watching as chokidar discovers these file paths (before the `ready` event).
+   */
+  ignoreInitial?: boolean;
+
+  /**
+   * When `false`, only the symlinks themselves will be watched for changes instead of following
+   * the link references and bubbling events through the link's path.
+   */
+  followSymlinks?: boolean;
+
+  /**
+   * The base directory from which watch `paths` are to be derived. Paths emitted with events will
+   * be relative to this.
+   */
+  cwd?: string;
+
+  /**
+   *  If set to true then the strings passed to .watch() and .add() are treated as literal path
+   *  names, even if they look like globs. Default: false.
+   */
+  disableGlobbing?: boolean;
+
+  /**
+   * Whether to use fs.watchFile (backed by polling), or fs.watch. If polling leads to high CPU
+   * utilization, consider setting this to `false`. It is typically necessary to **set this to
+   * `true` to successfully watch files over a network**, and it may be necessary to successfully
+   * watch files in other non-standard situations. Setting to `true` explicitly on OS X overrides
+   * the `useFsEvents` default.
+   */
+  usePolling?: boolean;
+
+  /**
+   * Whether to use the `fsevents` watching interface if available. When set to `true` explicitly
+   * and `fsevents` is available this supercedes the `usePolling` setting. When set to `false` on
+   * OS X, `usePolling: true` becomes the default.
+   */
+  useFsEvents?: boolean;
+
+  /**
+   * If relying upon the [`fs.Stats`](https://nodejs.org/api/fs.html#fs_class_fs_stats) object that
+   * may get passed with `add`, `addDir`, and `change` events, set this to `true` to ensure it is
+   * provided even in cases where it wasn't already available from the underlying watch events.
+   */
+  alwaysStat?: boolean;
+
+  /**
+   * If set, limits how many levels of subdirectories will be traversed.
+   */
+  depth?: number;
+
+  /**
+   * Interval of file system polling.
+   */
+  interval?: number;
+
+  /**
+   * Interval of file system polling for binary files. ([see list of binary extensions](https://gi
+   * thub.com/sindresorhus/binary-extensions/blob/master/binary-extensions.json))
+   */
+  binaryInterval?: number;
+
+  /**
+   *  Indicates whether to watch files that don't have read permissions if possible. If watching
+   *  fails due to `EPERM` or `EACCES` with this set to `true`, the errors will be suppressed
+   *  silently.
+   */
+  ignorePermissionErrors?: boolean;
+
+  /**
+   * `true` if `useFsEvents` and `usePolling` are `false`). Automatically filters out artifacts
+   * that occur when using editors that use "atomic writes" instead of writing directly to the
+   * source file. If a file is re-added within 100 ms of being deleted, Chokidar emits a `change`
+   * event rather than `unlink` then `add`. If the default of 100 ms does not work well for you,
+   * you can override it by setting `atomic` to a custom value, in milliseconds.
+   */
+  atomic?: boolean | number;
+
+  /**
+   * can be set to an object in order to adjust timing params:
+   */
+  awaitWriteFinish?: AwaitWriteFinishOptions | boolean;
+}
+
+export interface AwaitWriteFinishOptions {
+  /**
+   * Amount of time in milliseconds for a file size to remain constant before emitting its event.
+   */
+  stabilityThreshold?: number;
+
+  /**
+   * File size polling interval.
+   */
+  pollInterval?: number;
+}
+
+/**
+ * produces an instance of `FSWatcher`.
+ */
+export function watch(
+  paths: string | ReadonlyArray<string>,
+  options?: WatchOptions
+): FSWatcher;
