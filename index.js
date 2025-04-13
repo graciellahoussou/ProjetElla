@@ -1,288 +1,260 @@
-/*!
- * to-regex-range <https://github.com/micromatch/to-regex-range>
- *
- * Copyright (c) 2015-present, Jon Schlinkert.
- * Released under the MIT License.
- */
+export { parseAst, parseAstAsync } from 'rollup/parseAst';
+import { i as isInNodeModules, a as arraify } from './chunks/dep-Cy9twKMn.js';
+export { b as build, g as buildErrorMessage, k as createFilter, v as createLogger, c as createServer, d as defineConfig, h as fetchModule, f as formatPostcssSourceMap, x as isFileServingAllowed, l as loadConfigFromFile, y as loadEnv, j as mergeAlias, m as mergeConfig, n as normalizePath, o as optimizeDeps, e as preprocessCSS, p as preview, r as resolveConfig, z as resolveEnvPrefix, q as rollupVersion, w as searchForWorkspaceRoot, u as send, s as sortUserPlugins, t as transformWithEsbuild } from './chunks/dep-Cy9twKMn.js';
+export { VERSION as version } from './constants.js';
+export { version as esbuildVersion } from 'esbuild';
+import { existsSync, readFileSync } from 'node:fs';
+import { ViteRuntime, ESModulesRunner } from 'vite/runtime';
+import 'node:fs/promises';
+import 'node:path';
+import 'node:url';
+import 'node:util';
+import 'node:perf_hooks';
+import 'node:module';
+import 'tty';
+import 'path';
+import 'fs';
+import 'node:events';
+import 'node:stream';
+import 'node:string_decoder';
+import 'node:child_process';
+import 'node:http';
+import 'node:https';
+import 'util';
+import 'net';
+import 'events';
+import 'url';
+import 'http';
+import 'stream';
+import 'os';
+import 'child_process';
+import 'node:os';
+import 'node:crypto';
+import 'node:dns';
+import 'crypto';
+import 'module';
+import 'node:assert';
+import 'node:v8';
+import 'node:worker_threads';
+import 'node:buffer';
+import 'querystring';
+import 'node:readline';
+import 'zlib';
+import 'buffer';
+import 'https';
+import 'tls';
+import 'assert';
+import 'node:zlib';
 
-'use strict';
-
-const isNumber = require('is-number');
-
-const toRegexRange = (min, max, options) => {
-  if (isNumber(min) === false) {
-    throw new TypeError('toRegexRange: expected the first argument to be a number');
+const CSS_LANGS_RE = (
+  // eslint-disable-next-line regexp/no-unused-capturing-group
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
+);
+const isCSSRequest = (request) => CSS_LANGS_RE.test(request);
+class SplitVendorChunkCache {
+  cache;
+  constructor() {
+    this.cache = /* @__PURE__ */ new Map();
   }
-
-  if (max === void 0 || min === max) {
-    return String(min);
+  reset() {
+    this.cache = /* @__PURE__ */ new Map();
   }
-
-  if (isNumber(max) === false) {
-    throw new TypeError('toRegexRange: expected the second argument to be a number.');
-  }
-
-  let opts = { relaxZeros: true, ...options };
-  if (typeof opts.strictZeros === 'boolean') {
-    opts.relaxZeros = opts.strictZeros === false;
-  }
-
-  let relax = String(opts.relaxZeros);
-  let shorthand = String(opts.shorthand);
-  let capture = String(opts.capture);
-  let wrap = String(opts.wrap);
-  let cacheKey = min + ':' + max + '=' + relax + shorthand + capture + wrap;
-
-  if (toRegexRange.cache.hasOwnProperty(cacheKey)) {
-    return toRegexRange.cache[cacheKey].result;
-  }
-
-  let a = Math.min(min, max);
-  let b = Math.max(min, max);
-
-  if (Math.abs(a - b) === 1) {
-    let result = min + '|' + max;
-    if (opts.capture) {
-      return `(${result})`;
-    }
-    if (opts.wrap === false) {
-      return result;
-    }
-    return `(?:${result})`;
-  }
-
-  let isPadded = hasPadding(min) || hasPadding(max);
-  let state = { min, max, a, b };
-  let positives = [];
-  let negatives = [];
-
-  if (isPadded) {
-    state.isPadded = isPadded;
-    state.maxLen = String(state.max).length;
-  }
-
-  if (a < 0) {
-    let newMin = b < 0 ? Math.abs(b) : 1;
-    negatives = splitToPatterns(newMin, Math.abs(a), state, opts);
-    a = state.a = 0;
-  }
-
-  if (b >= 0) {
-    positives = splitToPatterns(a, b, state, opts);
-  }
-
-  state.negatives = negatives;
-  state.positives = positives;
-  state.result = collatePatterns(negatives, positives, opts);
-
-  if (opts.capture === true) {
-    state.result = `(${state.result})`;
-  } else if (opts.wrap !== false && (positives.length + negatives.length) > 1) {
-    state.result = `(?:${state.result})`;
-  }
-
-  toRegexRange.cache[cacheKey] = state;
-  return state.result;
-};
-
-function collatePatterns(neg, pos, options) {
-  let onlyNegative = filterPatterns(neg, pos, '-', false, options) || [];
-  let onlyPositive = filterPatterns(pos, neg, '', false, options) || [];
-  let intersected = filterPatterns(neg, pos, '-?', true, options) || [];
-  let subpatterns = onlyNegative.concat(intersected).concat(onlyPositive);
-  return subpatterns.join('|');
 }
-
-function splitToRanges(min, max) {
-  let nines = 1;
-  let zeros = 1;
-
-  let stop = countNines(min, nines);
-  let stops = new Set([max]);
-
-  while (min <= stop && stop <= max) {
-    stops.add(stop);
-    nines += 1;
-    stop = countNines(min, nines);
-  }
-
-  stop = countZeros(max + 1, zeros) - 1;
-
-  while (min < stop && stop <= max) {
-    stops.add(stop);
-    zeros += 1;
-    stop = countZeros(max + 1, zeros) - 1;
-  }
-
-  stops = [...stops];
-  stops.sort(compare);
-  return stops;
+function splitVendorChunk(options = {}) {
+  const cache = options.cache ?? new SplitVendorChunkCache();
+  return (id, { getModuleInfo }) => {
+    if (isInNodeModules(id) && !isCSSRequest(id) && staticImportedByEntry(id, getModuleInfo, cache.cache)) {
+      return "vendor";
+    }
+  };
 }
-
-/**
- * Convert a range to a regex pattern
- * @param {Number} `start`
- * @param {Number} `stop`
- * @return {String}
- */
-
-function rangeToPattern(start, stop, options) {
-  if (start === stop) {
-    return { pattern: start, count: [], digits: 0 };
+function staticImportedByEntry(id, getModuleInfo, cache, importStack = []) {
+  if (cache.has(id)) {
+    return cache.get(id);
   }
-
-  let zipped = zip(start, stop);
-  let digits = zipped.length;
-  let pattern = '';
-  let count = 0;
-
-  for (let i = 0; i < digits; i++) {
-    let [startDigit, stopDigit] = zipped[i];
-
-    if (startDigit === stopDigit) {
-      pattern += startDigit;
-
-    } else if (startDigit !== '0' || stopDigit !== '9') {
-      pattern += toCharacterClass(startDigit, stopDigit, options);
-
-    } else {
-      count++;
+  if (importStack.includes(id)) {
+    cache.set(id, false);
+    return false;
+  }
+  const mod = getModuleInfo(id);
+  if (!mod) {
+    cache.set(id, false);
+    return false;
+  }
+  if (mod.isEntry) {
+    cache.set(id, true);
+    return true;
+  }
+  const someImporterIs = mod.importers.some(
+    (importer) => staticImportedByEntry(
+      importer,
+      getModuleInfo,
+      cache,
+      importStack.concat(id)
+    )
+  );
+  cache.set(id, someImporterIs);
+  return someImporterIs;
+}
+function splitVendorChunkPlugin() {
+  const caches = [];
+  function createSplitVendorChunk(output, config) {
+    const cache = new SplitVendorChunkCache();
+    caches.push(cache);
+    const build = config.build ?? {};
+    const format = output?.format;
+    if (!build.ssr && !build.lib && format !== "umd" && format !== "iife") {
+      return splitVendorChunk({ cache });
     }
   }
-
-  if (count) {
-    pattern += options.shorthand === true ? '\\d' : '[0-9]';
-  }
-
-  return { pattern, count: [count], digits };
-}
-
-function splitToPatterns(min, max, tok, options) {
-  let ranges = splitToRanges(min, max);
-  let tokens = [];
-  let start = min;
-  let prev;
-
-  for (let i = 0; i < ranges.length; i++) {
-    let max = ranges[i];
-    let obj = rangeToPattern(String(start), String(max), options);
-    let zeros = '';
-
-    if (!tok.isPadded && prev && prev.pattern === obj.pattern) {
-      if (prev.count.length > 1) {
-        prev.count.pop();
+  return {
+    name: "vite:split-vendor-chunk",
+    config(config) {
+      let outputs = config?.build?.rollupOptions?.output;
+      if (outputs) {
+        outputs = arraify(outputs);
+        for (const output of outputs) {
+          const viteManualChunks = createSplitVendorChunk(output, config);
+          if (viteManualChunks) {
+            if (output.manualChunks) {
+              if (typeof output.manualChunks === "function") {
+                const userManualChunks = output.manualChunks;
+                output.manualChunks = (id, api) => {
+                  return userManualChunks(id, api) ?? viteManualChunks(id, api);
+                };
+              } else {
+                console.warn(
+                  "(!) the `splitVendorChunk` plugin doesn't have any effect when using the object form of `build.rollupOptions.output.manualChunks`. Consider using the function form instead."
+                );
+              }
+            } else {
+              output.manualChunks = viteManualChunks;
+            }
+          }
+        }
+      } else {
+        return {
+          build: {
+            rollupOptions: {
+              output: {
+                manualChunks: createSplitVendorChunk({}, config)
+              }
+            }
+          }
+        };
       }
-
-      prev.count.push(obj.count[0]);
-      prev.string = prev.pattern + toQuantifier(prev.count);
-      start = max + 1;
-      continue;
+    },
+    buildStart() {
+      caches.forEach((cache) => cache.reset());
     }
+  };
+}
 
-    if (tok.isPadded) {
-      zeros = padZeros(max, tok, options);
-    }
-
-    obj.string = zeros + obj.pattern + toQuantifier(obj.count);
-    tokens.push(obj);
-    start = max + 1;
-    prev = obj;
+class ServerHMRBroadcasterClient {
+  constructor(hmrChannel) {
+    this.hmrChannel = hmrChannel;
   }
-
-  return tokens;
-}
-
-function filterPatterns(arr, comparison, prefix, intersection, options) {
-  let result = [];
-
-  for (let ele of arr) {
-    let { string } = ele;
-
-    // only push if _both_ are negative...
-    if (!intersection && !contains(comparison, 'string', string)) {
-      result.push(prefix + string);
+  send(...args) {
+    let payload;
+    if (typeof args[0] === "string") {
+      payload = {
+        type: "custom",
+        event: args[0],
+        data: args[1]
+      };
+    } else {
+      payload = args[0];
     }
-
-    // or _both_ are positive
-    if (intersection && contains(comparison, 'string', string)) {
-      result.push(prefix + string);
+    if (payload.type !== "custom") {
+      throw new Error(
+        "Cannot send non-custom events from the client to the server."
+      );
     }
+    this.hmrChannel.send(payload);
   }
-  return result;
 }
-
-/**
- * Zip strings
- */
-
-function zip(a, b) {
-  let arr = [];
-  for (let i = 0; i < a.length; i++) arr.push([a[i], b[i]]);
-  return arr;
-}
-
-function compare(a, b) {
-  return a > b ? 1 : b > a ? -1 : 0;
-}
-
-function contains(arr, key, val) {
-  return arr.some(ele => ele[key] === val);
-}
-
-function countNines(min, len) {
-  return Number(String(min).slice(0, -len) + '9'.repeat(len));
-}
-
-function countZeros(integer, zeros) {
-  return integer - (integer % Math.pow(10, zeros));
-}
-
-function toQuantifier(digits) {
-  let [start = 0, stop = ''] = digits;
-  if (stop || start > 1) {
-    return `{${start + (stop ? ',' + stop : '')}}`;
-  }
-  return '';
-}
-
-function toCharacterClass(a, b, options) {
-  return `[${a}${(b - a === 1) ? '' : '-'}${b}]`;
-}
-
-function hasPadding(str) {
-  return /^-?(0+)\d/.test(str);
-}
-
-function padZeros(value, tok, options) {
-  if (!tok.isPadded) {
-    return value;
-  }
-
-  let diff = Math.abs(tok.maxLen - String(value).length);
-  let relax = options.relaxZeros !== false;
-
-  switch (diff) {
-    case 0:
-      return '';
-    case 1:
-      return relax ? '0?' : '0';
-    case 2:
-      return relax ? '0{0,2}' : '00';
-    default: {
-      return relax ? `0{0,${diff}}` : `0{${diff}}`;
+class ServerHMRConnector {
+  handlers = [];
+  hmrChannel;
+  hmrClient;
+  connected = false;
+  constructor(server) {
+    const hmrChannel = server.hot?.channels.find(
+      (c) => c.name === "ssr"
+    );
+    if (!hmrChannel) {
+      throw new Error(
+        "Your version of Vite doesn't support HMR during SSR. Please, use Vite 5.1 or higher."
+      );
     }
+    this.hmrClient = new ServerHMRBroadcasterClient(hmrChannel);
+    hmrChannel.api.outsideEmitter.on("send", (payload) => {
+      this.handlers.forEach((listener) => listener(payload));
+    });
+    this.hmrChannel = hmrChannel;
+  }
+  isReady() {
+    return this.connected;
+  }
+  send(message) {
+    const payload = JSON.parse(message);
+    this.hmrChannel.api.innerEmitter.emit(
+      payload.event,
+      payload.data,
+      this.hmrClient
+    );
+  }
+  onUpdate(handler) {
+    this.handlers.push(handler);
+    handler({ type: "connected" });
+    this.connected = true;
   }
 }
 
-/**
- * Cache
- */
+function createHMROptions(server, options) {
+  if (server.config.server.hmr === false || options.hmr === false) {
+    return false;
+  }
+  const connection = new ServerHMRConnector(server);
+  return {
+    connection,
+    logger: options.hmr?.logger
+  };
+}
+const prepareStackTrace = {
+  retrieveFile(id) {
+    if (existsSync(id)) {
+      return readFileSync(id, "utf-8");
+    }
+  }
+};
+function resolveSourceMapOptions(options) {
+  if (options.sourcemapInterceptor != null) {
+    if (options.sourcemapInterceptor === "prepareStackTrace") {
+      return prepareStackTrace;
+    }
+    if (typeof options.sourcemapInterceptor === "object") {
+      return { ...prepareStackTrace, ...options.sourcemapInterceptor };
+    }
+    return options.sourcemapInterceptor;
+  }
+  if (typeof process !== "undefined" && "setSourceMapsEnabled" in process) {
+    return "node";
+  }
+  return prepareStackTrace;
+}
+async function createViteRuntime(server, options = {}) {
+  const hmr = createHMROptions(server, options);
+  return new ViteRuntime(
+    {
+      ...options,
+      root: server.config.root,
+      fetchModule: server.ssrFetchModule,
+      hmr,
+      sourcemapInterceptor: resolveSourceMapOptions(options)
+    },
+    options.runner || new ESModulesRunner()
+  );
+}
 
-toRegexRange.cache = {};
-toRegexRange.clearCache = () => (toRegexRange.cache = {});
-
-/**
- * Expose `toRegexRange`
- */
-
-module.exports = toRegexRange;
+export { ServerHMRConnector, createViteRuntime, isCSSRequest, splitVendorChunk, splitVendorChunkPlugin };
