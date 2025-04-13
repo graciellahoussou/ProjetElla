@@ -1,134 +1,305 @@
-<p align="center">
-	<a href="https://rollupjs.org/"><img src="https://rollupjs.org/rollup-logo.svg" width="150" /></a>
-</p>
+# to-regex-range [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=W8YFZ425KND68) [![NPM version](https://img.shields.io/npm/v/to-regex-range.svg?style=flat)](https://www.npmjs.com/package/to-regex-range) [![NPM monthly downloads](https://img.shields.io/npm/dm/to-regex-range.svg?style=flat)](https://npmjs.org/package/to-regex-range) [![NPM total downloads](https://img.shields.io/npm/dt/to-regex-range.svg?style=flat)](https://npmjs.org/package/to-regex-range) [![Linux Build Status](https://img.shields.io/travis/micromatch/to-regex-range.svg?style=flat&label=Travis)](https://travis-ci.org/micromatch/to-regex-range)
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/rollup">
-    <img src="https://img.shields.io/npm/v/rollup.svg" alt="npm version" >
-  </a>
-  <a href="https://nodejs.org/en/about/previous-releases">
-    <img src="https://img.shields.io/node/v/rollup.svg" alt="node compatibility">
-  </a>
-  <a href="https://packagephobia.now.sh/result?p=rollup">
-    <img src="https://packagephobia.now.sh/badge?p=rollup" alt="install size" >
-  </a>
-  <a href="https://codecov.io/gh/rollup/rollup">
-    <img src="https://codecov.io/gh/rollup/rollup/graph/badge.svg" alt="code coverage" >
-  </a>
-  <a href="#backers" alt="sponsors on Open Collective">
-    <img src="https://opencollective.com/rollup/backers/badge.svg" alt="backers" >
-  </a> 
-  <a href="#sponsors" alt="Sponsors on Open Collective">
-    <img src="https://opencollective.com/rollup/sponsors/badge.svg" alt="sponsors" >
-  </a> 
-  <a href="https://github.com/rollup/rollup/blob/master/LICENSE.md">
-    <img src="https://img.shields.io/npm/l/rollup.svg" alt="license">
-  </a>
-  <a href='https://is.gd/rollup_chat?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge'>
-    <img src='https://img.shields.io/discord/466787075518365708?color=778cd1&label=chat' alt='Join the chat at https://is.gd/rollup_chat'>
-  </a>
-</p>
+> Pass two numbers, get a regex-compatible source string for matching ranges. Validated against more than 2.78 million test assertions.
 
-<h1 align="center">Rollup</h1>
+Please consider following this project's author, [Jon Schlinkert](https://github.com/jonschlinkert), and consider starring the project to show your :heart: and support.
 
-## Overview
+## Install
 
-Rollup is a module bundler for JavaScript which compiles small pieces of code into something larger and more complex, such as a library or application. It uses the standardized ES module format for code, instead of previous idiosyncratic solutions such as CommonJS and AMD. ES modules let you freely and seamlessly combine the most useful individual functions from your favorite libraries. Rollup can optimize ES modules for faster native loading in modern browsers, or output a legacy module format allowing ES module workflows today.
+Install with [npm](https://www.npmjs.com/):
 
-## Quick Start Guide
-
-Install with `npm install --global rollup`. Rollup can be used either through a [command line interface](https://rollupjs.org/command-line-interface/) with an optional configuration file or else through its [JavaScript API](https://rollupjs.org/javascript-api/). Run `rollup --help` to see the available options and parameters. The starter project templates, [rollup-starter-lib](https://github.com/rollup/rollup-starter-lib) and [rollup-starter-app](https://github.com/rollup/rollup-starter-app), demonstrate common configuration options, and more detailed instructions are available throughout the [user guide](https://rollupjs.org/introduction/).
-
-### Commands
-
-These commands assume the entry point to your application is named main.js, and that you'd like all imports compiled into a single file named bundle.js.
-
-For browsers:
-
-```bash
-# compile to a <script> containing a self-executing function
-rollup main.js --format iife --name "myBundle" --file bundle.js
+```sh
+$ npm install --save to-regex-range
 ```
 
-For Node.js:
+<details>
+<summary><strong>What does this do?</strong></summary>
 
-```bash
-# compile to a CommonJS module
-rollup main.js --format cjs --file bundle.js
-```
+<br>
 
-For both browsers and Node.js:
+This libary generates the `source` string to be passed to `new RegExp()` for matching a range of numbers.
 
-```bash
-# UMD format requires a bundle name
-rollup main.js --format umd --name "myBundle" --file bundle.js
-```
-
-## Why
-
-Developing software is usually easier if you break your project into smaller separate pieces, since that often removes unexpected interactions and dramatically reduces the complexity of the problems you'll need to solve, and simply writing smaller projects in the first place [isn't necessarily the answer](https://medium.com/@Rich_Harris/small-modules-it-s-not-quite-that-simple-3ca532d65de4). Unfortunately, JavaScript has not historically included this capability as a core feature in the language.
-
-This finally changed with ES modules support in JavaScript, which provides a syntax for importing and exporting functions and data so they can be shared between separate scripts. Most browsers and Node.js support ES modules. However, Node.js releases before 12.17 support ES modules only behind the `--experimental-modules` flag, and older browsers like Internet Explorer do not support ES modules at all. Rollup allows you to write your code using ES modules, and run your application even in environments that do not support ES modules natively. For environments that support them, Rollup can output optimized ES modules; for environments that don't, Rollup can compile your code to other formats such as CommonJS modules, AMD modules, and IIFE-style scripts. This means that you get to _write future-proof code_, and you also get the tremendous benefits of...
-
-## Tree Shaking
-
-In addition to enabling the use of ES modules, Rollup also statically analyzes and optimizes the code you are importing, and will exclude anything that isn't actually used. This allows you to build on top of existing tools and modules without adding extra dependencies or bloating the size of your project.
-
-For example, with CommonJS, the _entire tool or library must be imported_.
+**Example**
 
 ```js
-// import the entire utils object with CommonJS
-var utils = require('node:utils');
-var query = 'Rollup';
-// use the ajax method of the utils object
-utils.ajax('https://api.example.com?search=' + query).then(handleResponse);
+const toRegexRange = require('to-regex-range');
+const regex = new RegExp(toRegexRange('15', '95'));
 ```
 
-But with ES modules, instead of importing the whole `utils` object, we can just import the one `ajax` function we need:
+A string is returned so that you can do whatever you need with it before passing it to `new RegExp()` (like adding `^` or `$` boundaries, defining flags, or combining it another string).
+
+<br>
+
+</details>
+
+<details>
+<summary><strong>Why use this library?</strong></summary>
+
+<br>
+
+### Convenience
+
+Creating regular expressions for matching numbers gets deceptively complicated pretty fast.
+
+For example, let's say you need a validation regex for matching part of a user-id, postal code, social security number, tax id, etc:
+
+* regex for matching `1` => `/1/` (easy enough)
+* regex for matching `1` through `5` => `/[1-5]/` (not bad...)
+* regex for matching `1` or `5` => `/(1|5)/` (still easy...)
+* regex for matching `1` through `50` => `/([1-9]|[1-4][0-9]|50)/` (uh-oh...)
+* regex for matching `1` through `55` => `/([1-9]|[1-4][0-9]|5[0-5])/` (no prob, I can do this...)
+* regex for matching `1` through `555` => `/([1-9]|[1-9][0-9]|[1-4][0-9]{2}|5[0-4][0-9]|55[0-5])/` (maybe not...)
+* regex for matching `0001` through `5555` => `/(0{3}[1-9]|0{2}[1-9][0-9]|0[1-9][0-9]{2}|[1-4][0-9]{3}|5[0-4][0-9]{2}|55[0-4][0-9]|555[0-5])/` (okay, I get the point!)
+
+The numbers are contrived, but they're also really basic. In the real world you might need to generate a regex on-the-fly for validation.
+
+**Learn more**
+
+If you're interested in learning more about [character classes](http://www.regular-expressions.info/charclass.html) and other regex features, I personally have always found [regular-expressions.info](http://www.regular-expressions.info/charclass.html) to be pretty useful.
+
+### Heavily tested
+
+As of April 07, 2019, this library runs [>1m test assertions](./test/test.js) against generated regex-ranges to provide brute-force verification that results are correct.
+
+Tests run in ~280ms on my MacBook Pro, 2.5 GHz Intel Core i7.
+
+### Optimized
+
+Generated regular expressions are optimized:
+
+* duplicate sequences and character classes are reduced using quantifiers
+* smart enough to use `?` conditionals when number(s) or range(s) can be positive or negative
+* uses fragment caching to avoid processing the same exact string more than once
+
+<br>
+
+</details>
+
+## Usage
+
+Add this library to your javascript application with the following line of code
 
 ```js
-// import the ajax function with an ES import statement
-import { ajax } from 'node:utils';
-
-var query = 'Rollup';
-// call the ajax function
-ajax('https://api.example.com?search=' + query).then(handleResponse);
+const toRegexRange = require('to-regex-range');
 ```
 
-Because Rollup includes the bare minimum, it results in lighter, faster, and less complicated libraries and applications. Since this approach is based on explicit `import` and `export` statements, it is vastly more effective than simply running an automated minifier to detect unused variables in the compiled output code.
+The main export is a function that takes two integers: the `min` value and `max` value (formatted as strings or numbers).
 
-## Compatibility
+```js
+const source = toRegexRange('15', '95');
+//=> 1[5-9]|[2-8][0-9]|9[0-5]
 
-### Importing CommonJS
+const regex = new RegExp(`^${source}$`);
+console.log(regex.test('14')); //=> false
+console.log(regex.test('50')); //=> true
+console.log(regex.test('94')); //=> true
+console.log(regex.test('96')); //=> false
+```
 
-Rollup can import existing CommonJS modules [through a plugin](https://github.com/rollup/plugins/tree/master/packages/commonjs).
+## Options
 
-### Publishing ES Modules
+### options.capture
 
-To make sure your ES modules are immediately usable by tools that work with CommonJS such as Node.js and webpack, you can use Rollup to compile to UMD or CommonJS format, and then point to that compiled version with the `main` property in your `package.json` file. If your `package.json` file also has a `module` field, ES-module-aware tools like Rollup and [webpack](https://webpack.js.org/) will [import the ES module version](https://github.com/rollup/rollup/wiki/pkg.module) directly.
+**Type**: `boolean`
 
-## Contributors
+**Deafault**: `undefined`
 
-This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)]. <a href="https://github.com/rollup/rollup/graphs/contributors"><img src="https://opencollective.com/rollup/contributors.svg?width=890" /></a>. If you want to contribute yourself, head over to the [contribution guidelines](CONTRIBUTING.md).
+Wrap the returned value in parentheses when there is more than one regex condition. Useful when you're dynamically generating ranges.
 
-## Backers
+```js
+console.log(toRegexRange('-10', '10'));
+//=> -[1-9]|-?10|[0-9]
 
-Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/rollup#backer)]
+console.log(toRegexRange('-10', '10', { capture: true }));
+//=> (-[1-9]|-?10|[0-9])
+```
 
-<a href="https://opencollective.com/rollup#backers" target="_blank"><img src="https://opencollective.com/rollup/backers.svg?width=890"></a>
+### options.shorthand
 
-## Sponsors
+**Type**: `boolean`
 
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/rollup#sponsor)]
+**Deafault**: `undefined`
 
-<a href="https://opencollective.com/rollup/sponsor/0/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/0/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/1/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/1/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/2/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/2/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/3/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/3/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/4/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/4/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/5/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/5/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/6/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/6/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/7/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/7/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/8/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/8/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/9/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/9/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/10/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/10/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/11/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/11/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/12/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/12/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/13/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/13/avatar.svg"></a> <a href="https://opencollective.com/rollup/sponsor/14/website" target="_blank"><img src="https://opencollective.com/rollup/sponsor/14/avatar.svg"></a>
+Use the regex shorthand for `[0-9]`:
 
-## Special Sponsor
+```js
+console.log(toRegexRange('0', '999999'));
+//=> [0-9]|[1-9][0-9]{1,5}
 
-<a href="https://www.tngtech.com/en/index.html" target="_blank"><img src="https://www.tngtech.com/fileadmin/Public/Images/Logos/TNG_Logo_medium_400x64.svg" alt="TNG Logo" width="280"/></a>
+console.log(toRegexRange('0', '999999', { shorthand: true }));
+//=> \d|[1-9]\d{1,5}
+```
 
-TNG has been supporting the work of [Lukas Taegert-Atkinson](https://github.com/lukastaegert) on Rollup since 2017.
+### options.relaxZeros
 
-## License
+**Type**: `boolean`
 
-[MIT](https://github.com/rollup/rollup/blob/master/LICENSE.md)
+**Default**: `true`
+
+This option relaxes matching for leading zeros when when ranges are zero-padded.
+
+```js
+const source = toRegexRange('-0010', '0010');
+const regex = new RegExp(`^${source}$`);
+console.log(regex.test('-10')); //=> true
+console.log(regex.test('-010')); //=> true
+console.log(regex.test('-0010')); //=> true
+console.log(regex.test('10')); //=> true
+console.log(regex.test('010')); //=> true
+console.log(regex.test('0010')); //=> true
+```
+
+When `relaxZeros` is false, matching is strict:
+
+```js
+const source = toRegexRange('-0010', '0010', { relaxZeros: false });
+const regex = new RegExp(`^${source}$`);
+console.log(regex.test('-10')); //=> false
+console.log(regex.test('-010')); //=> false
+console.log(regex.test('-0010')); //=> true
+console.log(regex.test('10')); //=> false
+console.log(regex.test('010')); //=> false
+console.log(regex.test('0010')); //=> true
+```
+
+## Examples
+
+| **Range**                   | **Result**                                                                      | **Compile time** |
+| ---                         | ---                                                                             | ---              |
+| `toRegexRange(-10, 10)`     | `-[1-9]\|-?10\|[0-9]`                                                           | _132μs_          |
+| `toRegexRange(-100, -10)`   | `-1[0-9]\|-[2-9][0-9]\|-100`                                                    | _50μs_           |
+| `toRegexRange(-100, 100)`   | `-[1-9]\|-?[1-9][0-9]\|-?100\|[0-9]`                                            | _42μs_           |
+| `toRegexRange(001, 100)`    | `0{0,2}[1-9]\|0?[1-9][0-9]\|100`                                                | _109μs_          |
+| `toRegexRange(001, 555)`    | `0{0,2}[1-9]\|0?[1-9][0-9]\|[1-4][0-9]{2}\|5[0-4][0-9]\|55[0-5]`                | _51μs_           |
+| `toRegexRange(0010, 1000)`  | `0{0,2}1[0-9]\|0{0,2}[2-9][0-9]\|0?[1-9][0-9]{2}\|1000`                         | _31μs_           |
+| `toRegexRange(1, 50)`       | `[1-9]\|[1-4][0-9]\|50`                                                         | _24μs_           |
+| `toRegexRange(1, 55)`       | `[1-9]\|[1-4][0-9]\|5[0-5]`                                                     | _23μs_           |
+| `toRegexRange(1, 555)`      | `[1-9]\|[1-9][0-9]\|[1-4][0-9]{2}\|5[0-4][0-9]\|55[0-5]`                        | _30μs_           |
+| `toRegexRange(1, 5555)`     | `[1-9]\|[1-9][0-9]{1,2}\|[1-4][0-9]{3}\|5[0-4][0-9]{2}\|55[0-4][0-9]\|555[0-5]` | _43μs_           |
+| `toRegexRange(111, 555)`    | `11[1-9]\|1[2-9][0-9]\|[2-4][0-9]{2}\|5[0-4][0-9]\|55[0-5]`                     | _38μs_           |
+| `toRegexRange(29, 51)`      | `29\|[34][0-9]\|5[01]`                                                          | _24μs_           |
+| `toRegexRange(31, 877)`     | `3[1-9]\|[4-9][0-9]\|[1-7][0-9]{2}\|8[0-6][0-9]\|87[0-7]`                       | _32μs_           |
+| `toRegexRange(5, 5)`        | `5`                                                                             | _8μs_            |
+| `toRegexRange(5, 6)`        | `5\|6`                                                                          | _11μs_           |
+| `toRegexRange(1, 2)`        | `1\|2`                                                                          | _6μs_            |
+| `toRegexRange(1, 5)`        | `[1-5]`                                                                         | _15μs_           |
+| `toRegexRange(1, 10)`       | `[1-9]\|10`                                                                     | _22μs_           |
+| `toRegexRange(1, 100)`      | `[1-9]\|[1-9][0-9]\|100`                                                        | _25μs_           |
+| `toRegexRange(1, 1000)`     | `[1-9]\|[1-9][0-9]{1,2}\|1000`                                                  | _31μs_           |
+| `toRegexRange(1, 10000)`    | `[1-9]\|[1-9][0-9]{1,3}\|10000`                                                 | _34μs_           |
+| `toRegexRange(1, 100000)`   | `[1-9]\|[1-9][0-9]{1,4}\|100000`                                                | _36μs_           |
+| `toRegexRange(1, 1000000)`  | `[1-9]\|[1-9][0-9]{1,5}\|1000000`                                               | _42μs_           |
+| `toRegexRange(1, 10000000)` | `[1-9]\|[1-9][0-9]{1,6}\|10000000`                                              | _42μs_           |
+
+## Heads up!
+
+**Order of arguments**
+
+When the `min` is larger than the `max`, values will be flipped to create a valid range:
+
+```js
+toRegexRange('51', '29');
+```
+
+Is effectively flipped to:
+
+```js
+toRegexRange('29', '51');
+//=> 29|[3-4][0-9]|5[0-1]
+```
+
+**Steps / increments**
+
+This library does not support steps (increments). A pr to add support would be welcome.
+
+## History
+
+### v2.0.0 - 2017-04-21
+
+**New features**
+
+Adds support for zero-padding!
+
+### v1.0.0
+
+**Optimizations**
+
+Repeating ranges are now grouped using quantifiers. rocessing time is roughly the same, but the generated regex is much smaller, which should result in faster matching.
+
+## Attribution
+
+Inspired by the python library [range-regex](https://github.com/dimka665/range-regex).
+
+## About
+
+<details>
+<summary><strong>Contributing</strong></summary>
+
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
+
+</details>
+
+<details>
+<summary><strong>Running Tests</strong></summary>
+
+Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
+
+```sh
+$ npm install && npm test
+```
+
+</details>
+
+<details>
+<summary><strong>Building docs</strong></summary>
+
+_(This project's readme.md is generated by [verb](https://github.com/verbose/verb-generate-readme), please don't edit the readme directly. Any changes to the readme must be made in the [.verb.md](.verb.md) readme template.)_
+
+To generate the readme, run the following command:
+
+```sh
+$ npm install -g verbose/verb#dev verb-generate-readme && verb
+```
+
+</details>
+
+### Related projects
+
+You might also be interested in these projects:
+
+* [expand-range](https://www.npmjs.com/package/expand-range): Fast, bash-like range expansion. Expand a range of numbers or letters, uppercase or lowercase. Used… [more](https://github.com/jonschlinkert/expand-range) | [homepage](https://github.com/jonschlinkert/expand-range "Fast, bash-like range expansion. Expand a range of numbers or letters, uppercase or lowercase. Used by micromatch.")
+* [fill-range](https://www.npmjs.com/package/fill-range): Fill in a range of numbers or letters, optionally passing an increment or `step` to… [more](https://github.com/jonschlinkert/fill-range) | [homepage](https://github.com/jonschlinkert/fill-range "Fill in a range of numbers or letters, optionally passing an increment or `step` to use, or create a regex-compatible range with `options.toRegex`")
+* [micromatch](https://www.npmjs.com/package/micromatch): Glob matching for javascript/node.js. A drop-in replacement and faster alternative to minimatch and multimatch. | [homepage](https://github.com/micromatch/micromatch "Glob matching for javascript/node.js. A drop-in replacement and faster alternative to minimatch and multimatch.")
+* [repeat-element](https://www.npmjs.com/package/repeat-element): Create an array by repeating the given value n times. | [homepage](https://github.com/jonschlinkert/repeat-element "Create an array by repeating the given value n times.")
+* [repeat-string](https://www.npmjs.com/package/repeat-string): Repeat the given string n times. Fastest implementation for repeating a string. | [homepage](https://github.com/jonschlinkert/repeat-string "Repeat the given string n times. Fastest implementation for repeating a string.")
+
+### Contributors
+
+| **Commits** | **Contributor** |  
+| --- | --- |  
+| 63 | [jonschlinkert](https://github.com/jonschlinkert) |  
+| 3  | [doowb](https://github.com/doowb) |  
+| 2  | [realityking](https://github.com/realityking) |  
+
+### Author
+
+**Jon Schlinkert**
+
+* [GitHub Profile](https://github.com/jonschlinkert)
+* [Twitter Profile](https://twitter.com/jonschlinkert)
+* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
+
+Please consider supporting me on Patreon, or [start your own Patreon page](https://patreon.com/invite/bxpbvm)!
+
+<a href="https://www.patreon.com/jonschlinkert">
+<img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" height="50">
+</a>
+
+### License
+
+Copyright © 2019, [Jon Schlinkert](https://github.com/jonschlinkert).
+Released under the [MIT License](LICENSE).
+
+***
+
+_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.8.0, on April 07, 2019._
